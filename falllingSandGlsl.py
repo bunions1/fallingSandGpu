@@ -64,12 +64,21 @@ class TextureParam(object):
             glTexParameteri(target, GL_TEXTURE_MAG_FILTER, self.mag_filter)
         if self.max_anisotropy > 0.0:
             glTexParameterf(target, GL_TEXTURE_MAX_ANISOTROPY_EXT, self.anisotropy)
+\\\\\\\\\\\\\ HEAD:falllingSandGlsl.py
 #        if flags & self.LOD:
 #            glTexParameterf(target, GL_TEXTURE_MIN_LOD, self.min_lod)
 #            glTexParameterf(target, GL_TEXTURE_MAX_LOD, self.max_lod)
 #        if flags & self.MIPMAP:
 #            glTexParameteri(target, GL_TEXTURE_BASE_LEVEL, self.min_mipmap)
 #            glTexParameteri(target, GL_TEXTURE_MAX_LEVEL, self.max_mipmap)
+=======
+        if flags & self.LOD:
+            glTexParameterf(target, GL_TEXTURE_MIN_LOD, self.min_lod)
+            glTexParameterf(target, GL_TEXTURE_MAX_LOD, self.max_lod)
+        if flags & self.MIPMAP:
+            glTexParameteri(target, GL_TEXTURE_BASE_LEVEL, self.min_mipmap)
+            glTexParameteri(target, GL_TEXTURE_MAX_LEVEL, self.max_mipmap)
+/////////////// 3058ceda06d71deb54e0d5cf485d6c99d5d20278:falllingSandGlsl.py
 
         if flags & self.WRAP:
             glTexParameteri(target, GL_TEXTURE_WRAP_S, self.wrap_s)
@@ -403,24 +412,54 @@ def setup2D(w, h):
 
 
 
+\\\\\\\\\\\\\ HEAD:falllingSandGlsl.py
+=======
+class FallingSandSupportFunctionsShader(FragmentShader):
+    def __init__(self):
+        FragmentShader.__init__(self, "falling_sand_support_functions_rect_f", """\
+bool isLiquid(vec4 color){
+//    vec4 current = texture2DRect(src, xy);                                                                       //oil(0.50, 0.25, 0.25)
+return all(equal(color.rgb, vec3(0.0))) || all(equal(color.rgb, vec3(0.0, 0.0, 1.0))) ||
+                           //oil(0.50, 0.25, 0.25)
+    (    all(greaterThan(color.rgb, vec3(0.49, 0.24, 0.24))) && all(lessThan(color.rgb, vec3(0.51, 0.26, 0.26)))   );
+}
+""")
+/////////////// 3058ceda06d71deb54e0d5cf485d6c99d5d20278:falllingSandGlsl.py
 
 class FallingSandShader(ShaderProgram):
     def __init__(self):
         ShaderProgram.__init__(self)
         self.setShader(FragmentShader("babs_rect_f", """\
+\\\\\\\\\\\\\ HEAD:falllingSandGlsl.py
+=======
+   
+/////////////// 3058ceda06d71deb54e0d5cf485d6c99d5d20278:falllingSandGlsl.py
 uniform sampler2DRect rand;        
 uniform sampler2DRect src;
 
 uniform float randomOffset;
 
 void main() {
+\\\\\\\\\\\\\ HEAD:falllingSandGlsl.py
         vec3 bottomSand = vec3(0.5, 0.5, 0.5);
         vec3 topSand = vec3(0.6, 0.6, 0.6);
 	vec4 current = texture2DRect(src, gl_TexCoord[0].st);
+=======
+
+        vec3 bottomSand = vec3(0.5, 0.5, 0.5);
+        vec3 topSand = vec3(0.6, 0.6, 0.6);
+	vec4 current = texture2DRect(src, gl_TexCoord[0].st);
+
+/////////////// 3058ceda06d71deb54e0d5cf485d6c99d5d20278:falllingSandGlsl.py
 	vec4 above = texture2DRect(src, gl_TexCoord[0].st + vec2(0.0, 1.0));
         vec4 below = texture2DRect(src, gl_TexCoord[0].st + vec2(0.0, -1.0));
 
 
+\\\\\\\\\\\\\ HEAD:falllingSandGlsl.py
+=======
+        vec4 twoLeft = texture2DRect(src, gl_TexCoord[0].st + vec2(-2.0, 0.0));
+
+/////////////// 3058ceda06d71deb54e0d5cf485d6c99d5d20278:falllingSandGlsl.py
         vec4 left = texture2DRect(src, gl_TexCoord[0].st + vec2(-1.0, 0.0));
         vec4 right = texture2DRect(src, gl_TexCoord[0].st + vec2(1.0, 0.0));
 
@@ -442,8 +481,13 @@ void main() {
 
 
 
+\\\\\\\\\\\\\ HEAD:falllingSandGlsl.py
         //red doesn't spread to white
         if( (all(equal(above.rgb, red)) || all(equal(below.rgb, red)) || all(equal(left.rgb, red)) || all(equal(right.rgb, red))) && any(notEqual(current.rgb, vec3(1.0))) ){
+=======
+        //red doesn't spread to white or blue
+        if( (all(equal(above.rgb, red)) || all(equal(below.rgb, red)) || all(equal(left.rgb, red)) || all(equal(right.rgb, red))) && (any(notEqual(current.rgb, vec3(1.0))) &&  any(notEqual(current.rgb, vec3(0.0, 0.0, 1.0)))) ){
+/////////////// 3058ceda06d71deb54e0d5cf485d6c99d5d20278:falllingSandGlsl.py
             if(all(greaterThan(current.rgb, bottomSand)) && all(lessThan(current.rgb, topSand)) && (xOdd == 0) && (yOdd == 0)){
                 gl_FragColor = current;
             }
@@ -452,12 +496,19 @@ void main() {
             }
         }
         else{
+\\\\\\\\\\\\\ HEAD:falllingSandGlsl.py
 
             if(all(equal(current.rgb, vec3(0.0))) && any(notEqual(below.rgb, vec3(0.0))) &&
+=======
+//begin down movement
+
+            if(isLiquid(current) && !(isLiquid(below)) &&
+/////////////// 3058ceda06d71deb54e0d5cf485d6c99d5d20278:falllingSandGlsl.py
                (belowRandNum.r > 0.2) &&
                (all(lessThan(below.rgb, bottomSand)) || all(greaterThan(below.rgb, topSand)))
                     // not sand
                ){ //black
+\\\\\\\\\\\\\ HEAD:falllingSandGlsl.py
      	   	    gl_FragColor = vec4(1.0);
             }
 	    else if(any(notEqual(current.rgb,vec3(0.0))) && ( all(lessThan(current.rgb, bottomSand)) || all(greaterThan(current.rgb, topSand)) ) //notsand
@@ -489,21 +540,66 @@ void main() {
                  //right above not going to fall
                   all(equal(upperRight.rgb, vec3(0.0)))
                )
+=======
+     	   	    gl_FragColor = vec4(1.0); //black becoming white
+            }
+	    else if(!isLiquid(current) && ( all(lessThan(current.rgb, bottomSand)) || all(greaterThan(current.rgb, topSand)) ) //notsand
+                    && (randNum.r > 0.2)
+                    && isLiquid(above) ){ //black
+  	   	    gl_FragColor = above; //white becoming black
+	    }
+//end down movement
+            // sideways movement
+//begin right sideways movement
+
+            else if( isLiquid(left) && all(equal(current.rgb, vec3(1.0))) &&
+//               (leftRandNum.r > 0.1) &&
+                 leftRandNum.r > 0.5 && //make sure pixel doesn't go both left and right               
+               !(
+                   isLiquid(above) || 
+                   all(equal(lowerLeft.rgb, vec3(1.0)))
+               )
+
+            ){ 
+                gl_FragColor = left; //white becoming black
+            }
+           else if( all(equal(right.rgb, vec3(1.0))) && isLiquid(current) &&
+//               (randNum.r > 0.1) &&
+                 randNum.r > 0.5 && //make sure pixel doesn't go both left and right
+
+
+               !(
+                  all(equal(below.rgb, vec3(1.0)))  || //current should fall but randomly isn't
+                 //right above not going to fall
+                  isLiquid(upperRight)
+               )
+
+/////////////// 3058ceda06d71deb54e0d5cf485d6c99d5d20278:falllingSandGlsl.py
             ){
                 gl_FragColor = vec4(1.0); //black becoming white
             }
 //end right sideways movement
 //begin left sideways movement
 
+\\\\\\\\\\\\\ HEAD:falllingSandGlsl.py
             else if( all(equal(right.rgb, vec3(0.0))) && all(equal(current.rgb, vec3(1.0))) &&
 //               (leftRandNum.r > 0.1) &&
                  rightRandNum.r < 0.5 && //make sure pixel doesn't go both left and right               
                !(
                    all(equal(above.rgb, vec3(0.0))) || 
+=======
+            else if( isLiquid(right) && all(equal(current.rgb, vec3(1.0))) &&
+//               (leftRandNum.r > 0.1) &&
+                 rightRandNum.r < 0.5 && //make sure pixel doesn't go both left and right
+                 !isLiquid(left) && //make you don't move left into same pixel as someone moving right
+               !(
+                   isLiquid(above) || 
+/////////////// 3058ceda06d71deb54e0d5cf485d6c99d5d20278:falllingSandGlsl.py
                    all(equal(lowerRight.rgb, vec3(1.0)))
                )
             ){ 
 
+\\\\\\\\\\\\\ HEAD:falllingSandGlsl.py
                 gl_FragColor = vec4(0.0); //white becoming black
             }
 
@@ -514,13 +610,29 @@ void main() {
                   all(equal(below.rgb, vec3(1.0)))|| //current should fall but randomly isn't
                  //right above not going to fall
                   all(equal(upperLeft.rgb, vec3(0.0)))
+=======
+                gl_FragColor = right; //white becoming black
+            }
+
+           else if( all(equal(left.rgb, vec3(1.0))) && isLiquid(current) &&
+//               (randNum.r > 0.1) &&
+                 randNum.r < 0.5 && //make sure pixel doesn't go both left and right
+                 !isLiquid(twoLeft) && //make you don't move left into same pixel as someone moving right                 
+               !(
+                  all(equal(below.rgb, vec3(1.0)))|| //current should fall but randomly isn't
+                 //right above not going to fall
+                  isLiquid(upperLeft)
+/////////////// 3058ceda06d71deb54e0d5cf485d6c99d5d20278:falllingSandGlsl.py
                )
             ){
                 gl_FragColor = vec4(1.0); //black becoming white
             }
 //end left sideways movement
+\\\\\\\\\\\\\ HEAD:falllingSandGlsl.py
 
 
+=======
+/////////////// 3058ceda06d71deb54e0d5cf485d6c99d5d20278:falllingSandGlsl.py
             else{
                 gl_FragColor = current;
             }
@@ -530,11 +642,18 @@ void main() {
     if(all(equal(current.rgb, red)) && randNum.r < 0.10){
         gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
     }
+\\\\\\\\\\\\\ HEAD:falllingSandGlsl.py
 
              
 
 }
 """))
+=======
+             
+
+}
+""").addDependency(FallingSandSupportFunctionsShader()))
+/////////////// 3058ceda06d71deb54e0d5cf485d6c99d5d20278:falllingSandGlsl.py
 
 
 
@@ -547,7 +666,11 @@ void main() {
         vec4 current = texture2DRect(src, vec2(gl_TexCoord[0].s + 100.0, gl_TexCoord[0].t + 100.0));
 
         if(current.r > 0.5)
+\\\\\\\\\\\\\ HEAD:falllingSandGlsl.py
              gl_FragColor = vec4(0.0, 0.0, 0.0, 1.0);
+=======
+             gl_FragColor = vec4(1.0, 1.0, 1.0, 1.0);
+/////////////// 3058ceda06d71deb54e0d5cf485d6c99d5d20278:falllingSandGlsl.py
          else
              gl_FragColor = gl_Color;
 
@@ -598,7 +721,11 @@ class Polygon():
         glTranslatef(x, y, -0)
         glBegin(GL_QUADS)
         for p in v:
+\\\\\\\\\\\\\ HEAD:falllingSandGlsl.py
             glTexCoord2f(p[0], p[1]); glVertex3f(p[0], p[1],0)  # draw each vertex
+=======
+            glTexCoord2f(p[0], p[1], 0); glVertex3f(p[0], p[1],0)  # draw each vertex
+/////////////// 3058ceda06d71deb54e0d5cf485d6c99d5d20278:falllingSandGlsl.py
         glEnd()
         # -- end drawing
         glPopMatrix()
@@ -648,7 +775,13 @@ class SandWindow(pyglet.window.Window):
         if symbol == key._5:
             self.color = (0.0, 0.0, 0.0, 1.0)
         if symbol == key._6: #sand brown
+\\\\\\\\\\\\\ HEAD:falllingSandGlsl.py
             self.color = (0.55, 0.55, 0.55, 1.0)            
+=======
+            self.color = (0.55, 0.55, 0.55, 1.0)
+        if symbol == key._7: 
+            self.color = (0.5, 0.25, 0.25, 1.0)
+/////////////// 3058ceda06d71deb54e0d5cf485d6c99d5d20278:falllingSandGlsl.py
             
             
 
@@ -733,11 +866,19 @@ def drawStaticSprinkers(dt, screen_width, screen_height):
 
 
 #womanScream = pyglet.media.load("woman_scream.wav", streaming=False)
+\\\\\\\\\\\\\ HEAD:falllingSandGlsl.py
 #player = pyglet.media.Player()
 #player.queue(womanScream)
 
 screen_width = 1900
 screen_height = 900
+=======
+player = pyglet.media.Player()
+#player.queue(womanScream)
+
+screen_width = 251  
+screen_height = 251
+/////////////// 3058ceda06d71deb54e0d5cf485d6c99d5d20278:falllingSandGlsl.py
 window = SandWindow(screen_width, screen_height)
 
 renderToBuffer = createFrameBufferObject(screen_width, screen_height)
@@ -750,7 +891,11 @@ fallingSandShader = FallingSandShader()
 sparseShader = SparseShader()
 
 glDisable(GL_DEPTH_TEST)
+\\\\\\\\\\\\\ HEAD:falllingSandGlsl.py
 #player.play()
+=======
+player.play()
+/////////////// 3058ceda06d71deb54e0d5cf485d6c99d5d20278:falllingSandGlsl.py
 i = 0
 @window.event
 def update(dt):
@@ -760,8 +905,13 @@ def update(dt):
     global randomFbo
     global screen_width
     global screen_height
+\\\\\\\\\\\\\ HEAD:falllingSandGlsl.py
 #    global player
 #    global womanScream
+=======
+    global player
+    global womanScream
+/////////////// 3058ceda06d71deb54e0d5cf485d6c99d5d20278:falllingSandGlsl.py
     
 
 

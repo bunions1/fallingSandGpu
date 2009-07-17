@@ -251,6 +251,7 @@ class ShaderProgram(object):
         glActiveTexture(GL_TEXTURE0 + u)
         glBindTexture(v.gl_tgt, v.gl_id)
 
+
 __all__ = ['VertexShader', 'FragmentShader', 'ShaderProgram', 'GLSLException']
 
 
