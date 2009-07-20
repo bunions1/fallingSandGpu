@@ -12,10 +12,14 @@ import pyglet.window
 from pyglet import clock
 from pyglet.gl import *
 from pyglet.image import *
+from  pyglet.sprite import *
 from pyglet.window import mouse
 #from  pyglet.text import *
 print pyglet.version
 from  shader import *
+import pyglui
+import draw
+import widget
 
 
 
@@ -701,10 +705,9 @@ def fillFboWithRandomData(randomFbo, screen_width, screen_height):
     randomImage = pyglet.image.SolidColorImagePattern(color=(0,0,50,255)).create_image(screen_width,screen_height)
     data = randomImage.get_data('RGB', randomImage.pitch)
 
-    newData = ""
-#    newData = (''.join(["%c%c%c%c" % ((random.randint(0, 255),)*4) for i in xrange((len(data)/4)/170000)])*170000)
-#    print(len(newData))
-    exit()
+
+    newData = (''.join(["%c%c%c%c" % ((random.randint(0, 255),)*4) for i in xrange((len(data)/4)/16)])*16)
+
     randomImage.set_data('RGB', randomImage.pitch, newData)
     texture = randomImage.get_texture(True)
 
@@ -749,18 +752,29 @@ def drawStaticSprinkers(dt, screen_width, screen_height):
     glDisable(renderToBuffer.colourBuffer(0).gl_tgt)
     renderToBuffer.unbind()
 
+    
+def nothing():
+    pass    
+
 
 
 #womanScream = pyglet.media.load("woman_scream.wav", streaming=False)
 #player = pyglet.media.Player()
 #player.queue(womanScream)
 
-screen_width = 1900
-screen_height = 900
+screen_width = 251
+screen_height = 251
+
 
 
 
 window = SandWindow(screen_width, screen_height)
+
+card = pyglui.Card([
+    widget.ImageButton(image.SolidColorImagePattern(color=(255, 255, 255, 255)).create_image(100,100), 0, 0, nothing)
+    ])
+                   
+pyglui.init(window, card)
 
 renderToBuffer = createFrameBufferObject(screen_width, screen_height)
 inputBuffer = createFrameBufferObject(screen_width, screen_height)
@@ -776,6 +790,8 @@ glDisable(GL_DEPTH_TEST)
 #player.play()
 
 i = 0
+
+
 @window.event
 def update(dt):
     global i
@@ -846,7 +862,7 @@ def update(dt):
     glDisable(randomFbo.colourBuffer(0).gl_tgt)        
     glActiveTexture(GL_TEXTURE0)
 
-
+    pyglui.draw_gui()
     window.label.draw()
     i += 1
 
