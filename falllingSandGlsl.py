@@ -1,3 +1,5 @@
+import pprint
+pp = pprint.PrettyPrinter(indent=4)
 import sys
 print sys.path
 import sys
@@ -20,6 +22,7 @@ from  shader import *
 import pyglui
 import draw
 import widget
+
 
 
 
@@ -706,7 +709,7 @@ def fillFboWithRandomData(randomFbo, screen_width, screen_height):
     data = randomImage.get_data('RGB', randomImage.pitch)
 
 
-    newData = (''.join(["%c%c%c%c" % ((random.randint(0, 255),)*4) for i in xrange((len(data)/4)/16)])*16)
+    newData = (''.join(["%c%c%c%c" % ((random.randint(0, 255),)*4) for i in xrange((len(data)/4)/1710)])*1710)
 
     randomImage.set_data('RGB', randomImage.pitch, newData)
     texture = randomImage.get_texture(True)
@@ -753,8 +756,7 @@ def drawStaticSprinkers(dt, screen_width, screen_height):
     renderToBuffer.unbind()
 
     
-def nothing():
-    pass    
+
 
 
 
@@ -762,19 +764,42 @@ def nothing():
 #player = pyglet.media.Player()
 #player.queue(womanScream)
 
-screen_width = 251
-screen_height = 251
-
-
+screen_width = 1900
+screen_height = 900
 
 
 window = SandWindow(screen_width, screen_height)
 
+
+def redToOne():
+    window.dispatch_event("on_key_press", key._1, [])
+def greenToTwo():
+    window.dispatch_event("on_key_press", key._2, [])
+def blueToThree():
+    window.dispatch_event("on_key_press", key._3, [])
+def whiteToFour():
+    window.dispatch_event("on_key_press", key._4, [])
+def blackToFive():
+    window.dispatch_event("on_key_press", key._5, [])
+def greyToSix():
+    window.dispatch_event("on_key_press", key._6, [])
+def sandBrownToSix():
+    window.dispatch_event("on_key_press", key._7, [])
+    
+    
+    
 card = pyglui.Card([
-    widget.ImageButton(image.SolidColorImagePattern(color=(255, 255, 255, 255)).create_image(100,100), 0, 0, nothing)
+    widget.ImageButton(image.SolidColorImagePattern(color=(0, 0, 0, 255)).create_image(20,20), 0, 0, blackToFive),
+    widget.ImageButton(image.SolidColorImagePattern(color=(255, 255, 255, 255)).create_image(20,20), 20, 0, whiteToFour),
+    widget.ImageButton(image.SolidColorImagePattern(color=(0, 0, 255, 255)).create_image(20,20), 40, 0, blueToThree),
+    widget.ImageButton(image.SolidColorImagePattern(color=(0, 255, 0, 255)).create_image(20,20), 60, 0, greenToTwo),
+    widget.ImageButton(image.SolidColorImagePattern(color=(255, 0, 0, 255)).create_image(20,20), 80, 0, redToOne),
+    widget.ImageButton(image.SolidColorImagePattern(color=(140, 140, 140, 255)).create_image(20,20), 100, 0, greyToSix),
+    widget.ImageButton(image.SolidColorImagePattern(color=(127, 63, 63, 255)).create_image(20,20), 120, 0, sandBrownToSix)
     ])
-                   
 pyglui.init(window, card)
+
+
 
 renderToBuffer = createFrameBufferObject(screen_width, screen_height)
 inputBuffer = createFrameBufferObject(screen_width, screen_height)
@@ -867,7 +892,7 @@ def update(dt):
     i += 1
 
 pyglet.clock.schedule_interval(update, 1.0/120.0)
-#pyglet.clock.schedule_interval(drawStaticSprinkers, 1.0/20.0, screen_width, screen_height) 
+#pyglet.clock.schedule_interval(drawStaticSprinkers, 1.0/20.0, screen_width, screen_height)
 pyglet.app.run()
 
 

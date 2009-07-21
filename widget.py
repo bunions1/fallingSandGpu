@@ -235,14 +235,22 @@ class ImageButton(pyglet.sprite.Sprite):
         if self.mouse_is_over(x, y):
             self.color = (200, 200, 200)
             self.action()
+            return pyglet.event.EVENT_HANDLED
         else:
             self.color = (255, 255, 255)
+
+    def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
+        if self.mouse_is_over(x, y):
+            return pyglet.event.EVENT_HANDLED            
+
     
     def on_mouse_motion(self, x, y, dx, dy):
         if self.mouse_is_over(x, y):
             self.color = (240, 240, 240)
+
         else:
             self.color = (255, 255, 255)
+
     
     def mouse_is_over(self, x, y):
         x1 = self.x-self.image.anchor_x
