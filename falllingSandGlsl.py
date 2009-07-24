@@ -633,7 +633,7 @@ class SandWindow(pyglet.window.Window):
 
 
     def __init__(self, width, height):
-        super(SandWindow, self).__init__(width, height)
+        super(SandWindow, self).__init__(width, height, resizable=True)
         self.label = pyglet.text.Label('Hello, world alsdkjf')
                                    
 
@@ -687,6 +687,79 @@ class SandWindow(pyglet.window.Window):
             self.pen = None
 
 
+
+    def update(self, dt):
+        global i
+        global renderToBuffer
+        global inputBuffer
+        global randomFbo
+        global screen_width
+        global screen_height
+
+#    global player
+#    global womanScream
+
+        renderToBuffer, inputBuffer = inputBuffer, renderToBuffer
+#draw spray paint patter cursor
+        inputBuffer.bind()
+        sparseShader.install()
+        glEnable(inputBuffer.colourBuffer(0).gl_tgt)
+        sparseShader.usetTex("src", 0, randomFbo.colourBuffer(0))
+        window.drawPen()
+        sparseShader.uninstall()
+        glDisable(inputBuffer.colourBuffer(0).gl_tgt)
+        inputBuffer.unbind()
+
+
+        glActiveTexture(GL_TEXTURE0)
+#calculate next screens state
+        randomOffset = random.randint(0, 100)
+        renderToBuffer.bind()
+        fallingSandShader.install()
+        glEnable(inputBuffer.colourBuffer(0).gl_tgt)
+        fallingSandShader.usetTex("src", 0, inputBuffer.colourBuffer(0))                
+        fallingSandShader.usetTex("rand", 1, randomFbo.colourBuffer(0))
+        fallingSandShader.uset1F("randomOffset", randomOffset)
+        setup2D(screen_width, screen_height)
+        glBegin(GL_QUADS)
+        glTexCoord2f(0.0, 0.0); glVertex2f(0.0, 0.0)
+        glTexCoord2f( screen_width, 0.0); glVertex2f( screen_width, 0.0)
+        glTexCoord2f( screen_width,  screen_height); glVertex2f( screen_width,  screen_height)
+        glTexCoord2f(0.0,  screen_height); glVertex2f(0.0,  screen_height)
+        glEnd()
+        glDisable(inputBuffer.colourBuffer(0).gl_tgt)
+        glDisable(randomFbo.colourBuffer(0).gl_tgt)
+        fallingSandShader.uninstall()
+        renderToBuffer.unbind()
+        glActiveTexture(GL_TEXTURE0)
+
+
+#display current state to screen
+
+
+        glBindTexture(renderToBuffer.colourBuffer(0).gl_tgt, renderToBuffer.colourBuffer(0).gl_id)
+        setup2D(screen_width, screen_height)
+        glColor4f(*(1, 1, 1, 1))
+        glBegin(GL_QUADS)
+        glTexCoord2f(0.0, 0.0); glVertex2f(0.0, 0.0)
+        glTexCoord2f( screen_width, 0.0); glVertex2f( screen_width, 0.0)
+        glTexCoord2f( screen_width,  screen_height); glVertex2f( screen_width,  screen_height)
+        glTexCoord2f(0.0,  screen_height); glVertex2f(0.0,  screen_height)
+        glEnd()
+
+
+        glBindTexture(renderToBuffer.colourBuffer(0).gl_tgt, 0)
+        glBindTexture(inputBuffer.colourBuffer(0).gl_tgt, 0)
+        glDisable(inputBuffer.colourBuffer(0).gl_tgt)
+        glDisable(randomFbo.colourBuffer(0).gl_tgt)        
+        glActiveTexture(GL_TEXTURE0)
+
+        pyglui.draw_gui()
+        window.label.draw()
+        i += 1
+            
+
+
         
 def createFrameBufferObject(screen_width, screen_height):
 
@@ -708,8 +781,7 @@ def fillFboWithRandomData(randomFbo, screen_width, screen_height):
     randomImage = pyglet.image.SolidColorImagePattern(color=(0,0,50,255)).create_image(screen_width,screen_height)
     data = randomImage.get_data('RGB', randomImage.pitch)
 
-
-    newData = (''.join(["%c%c%c%c" % ((random.randint(0, 255),)*4) for i in xrange((len(data)/4)/1710)])*1710)
+    newData = (''.join(["%c%c%c%c" % ((random.randint(0, 255),)*4) for i in xrange((len(data)/4)/4)])*4)
 
     randomImage.set_data('RGB', randomImage.pitch, newData)
     texture = randomImage.get_texture(True)
@@ -755,8 +827,6 @@ def drawStaticSprinkers(dt, screen_width, screen_height):
     glDisable(renderToBuffer.colourBuffer(0).gl_tgt)
     renderToBuffer.unbind()
 
-    
-
 
 
 
@@ -764,11 +834,11 @@ def drawStaticSprinkers(dt, screen_width, screen_height):
 #player = pyglet.media.Player()
 #player.queue(womanScream)
 
-screen_width = 1900
-screen_height = 900
-
+screen_width = 251
+screen_height = 251
 
 window = SandWindow(screen_width, screen_height)
+
 
 
 def redToOne():
@@ -785,9 +855,11 @@ def greyToSix():
     window.dispatch_event("on_key_press", key._6, [])
 def sandBrownToSix():
     window.dispatch_event("on_key_press", key._7, [])
-    
-    
-    
+def adjustPenSize(position):
+    window.penSize = 50 * position
+
+
+
 card = pyglui.Card([
     widget.ImageButton(image.SolidColorImagePattern(color=(0, 0, 0, 255)).create_image(20,20), 0, 0, blackToFive),
     widget.ImageButton(image.SolidColorImagePattern(color=(255, 255, 255, 255)).create_image(20,20), 20, 0, whiteToFour),
@@ -795,7 +867,8 @@ card = pyglui.Card([
     widget.ImageButton(image.SolidColorImagePattern(color=(0, 255, 0, 255)).create_image(20,20), 60, 0, greenToTwo),
     widget.ImageButton(image.SolidColorImagePattern(color=(255, 0, 0, 255)).create_image(20,20), 80, 0, redToOne),
     widget.ImageButton(image.SolidColorImagePattern(color=(140, 140, 140, 255)).create_image(20,20), 100, 0, greyToSix),
-    widget.ImageButton(image.SolidColorImagePattern(color=(127, 63, 63, 255)).create_image(20,20), 120, 0, sandBrownToSix)
+    widget.ImageButton(image.SolidColorImagePattern(color=(127, 63, 63, 255)).create_image(20,20), 120, 0, sandBrownToSix),
+    widget.Slider(160, 10, adjustPenSize, position=0.0, width=100.0, size=20)
     ])
 pyglui.init(window, card)
 
@@ -815,129 +888,9 @@ glDisable(GL_DEPTH_TEST)
 #player.play()
 
 i = 0
-
-
-@window.event
-def update(dt):
-    global i
-    global renderToBuffer
-    global inputBuffer
-    global randomFbo
-    global screen_width
-    global screen_height
-
-#    global player
-#    global womanScream
-
-    
-
-
-    renderToBuffer, inputBuffer = inputBuffer, renderToBuffer
-#draw spray paint patter cursor
-    inputBuffer.bind()
-    sparseShader.install()
-    glEnable(inputBuffer.colourBuffer(0).gl_tgt)
-    sparseShader.usetTex("src", 0, randomFbo.colourBuffer(0))
-    window.drawPen()
-    sparseShader.uninstall()
-    glDisable(inputBuffer.colourBuffer(0).gl_tgt)
-    inputBuffer.unbind()
-
-
-    glActiveTexture(GL_TEXTURE0)
-#calculate next screens state
-    randomOffset = random.randint(0, 100)
-    renderToBuffer.bind()
-    fallingSandShader.install()
-    glEnable(inputBuffer.colourBuffer(0).gl_tgt)
-    fallingSandShader.usetTex("src", 0, inputBuffer.colourBuffer(0))                
-    fallingSandShader.usetTex("rand", 1, randomFbo.colourBuffer(0))
-    fallingSandShader.uset1F("randomOffset", randomOffset)
-    setup2D(screen_width, screen_height)
-    glBegin(GL_QUADS)
-    glTexCoord2f(0.0, 0.0); glVertex2f(0.0, 0.0)
-    glTexCoord2f( screen_width, 0.0); glVertex2f( screen_width, 0.0)
-    glTexCoord2f( screen_width,  screen_height); glVertex2f( screen_width,  screen_height)
-    glTexCoord2f(0.0,  screen_height); glVertex2f(0.0,  screen_height)
-    glEnd()
-    glDisable(inputBuffer.colourBuffer(0).gl_tgt)
-    glDisable(randomFbo.colourBuffer(0).gl_tgt)
-    fallingSandShader.uninstall()
-    renderToBuffer.unbind()
-    glActiveTexture(GL_TEXTURE0)
-
-
-#display current state to screen
-
-
-    glBindTexture(renderToBuffer.colourBuffer(0).gl_tgt, renderToBuffer.colourBuffer(0).gl_id)
-    setup2D(screen_width, screen_height)
-    glColor4f(*(1, 1, 1, 1))
-    glBegin(GL_QUADS)
-    glTexCoord2f(0.0, 0.0); glVertex2f(0.0, 0.0)
-    glTexCoord2f( screen_width, 0.0); glVertex2f( screen_width, 0.0)
-    glTexCoord2f( screen_width,  screen_height); glVertex2f( screen_width,  screen_height)
-    glTexCoord2f(0.0,  screen_height); glVertex2f(0.0,  screen_height)
-    glEnd()
-
-
-    glBindTexture(renderToBuffer.colourBuffer(0).gl_tgt, 0)
-    glBindTexture(inputBuffer.colourBuffer(0).gl_tgt, 0)
-    glDisable(inputBuffer.colourBuffer(0).gl_tgt)
-    glDisable(randomFbo.colourBuffer(0).gl_tgt)        
-    glActiveTexture(GL_TEXTURE0)
-
-    pyglui.draw_gui()
-    window.label.draw()
-    i += 1
-
-pyglet.clock.schedule_interval(update, 1.0/120.0)
+pyglet.clock.schedule_interval(window.update, 1.0/120.0)
 #pyglet.clock.schedule_interval(drawStaticSprinkers, 1.0/20.0, screen_width, screen_height)
 pyglet.app.run()
 
 
-
-
-def test():
-    from newShader import NewShader;    
-    screen_width = 251
-    screen_height = 251
-    window = SandWindow(screen_width, screen_height)
-
-    fallingSandShader = FallingSandShader()
-
-    randomFboOne = createFrameBufferObject(screen_width, screen_height)
-    fillFboWithRandomData(randomFboOne, screen_width, screen_height)
-
-    randomFboTwo = createFrameBufferObject(screen_width, screen_height)
-    fillFboWithRandomData(randomFboTwo, screen_width, screen_height)
-    
-    glDisable(GL_DEPTH_TEST)
-    clk = clock.Clock(60)
-    i = 0
-    while not window.has_exit:
-        clk.tick()
-
-        fallingSandShader.install()
-        fallingSandShader.usetTex("src", 0, randomFboOne.colourBuffer(0))                
-#        fallingSandShader.usetTex("rand", 1, randomFboTwo.colourBuffer(0))
-        fallingSandShader.uset1F("randomOffset", 100)
-        fallingSandShader.uninstall()
-
-        window.clear()
-        window.label.draw()
-        window.dispatch_events()
-
-        window.flip()
-    
-#test()
-
-
-
-
-
-
-        
-#        glDisable(randomFboTwo.colourBuffer(0).gl_tgt)        
-#        glBindTexture(randomFboTwo.colourBuffer(0).gl_tgt, 0)
 

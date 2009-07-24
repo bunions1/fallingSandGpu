@@ -286,7 +286,7 @@ class Slider(object):
         draw.points((slider_x, self.y))
     
     def update_position(self, x):
-        self.position = (x-self.x)/self.width
+        self.position = float((x-self.x))/float(self.width)
         self.position = max(self.position, 0)
         self.position = min(self.position, 1)
     
@@ -294,10 +294,13 @@ class Slider(object):
         if self.mouse_is_over(x, y):
             self.dragging = True
             self.update_position(x)
+            return pyglet.event.EVENT_HANDLED            
     
     def on_mouse_drag(self, x, y, dx, dy, buttons, modifiers):
         if self.dragging:
             self.update_position(x)
+            return pyglet.event.EVENT_HANDLED            
+        
     
     def on_mouse_release(self, x, y, buttons, modifiers):
         if self.dragging:
