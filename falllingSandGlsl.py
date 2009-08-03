@@ -634,8 +634,7 @@ class SandWindow(pyglet.window.Window):
 
     def __init__(self, width, height):
         super(SandWindow, self).__init__(width, height, resizable=True)
-        self.label = pyglet.text.Label('Hello, world alsdkjf')
-                                   
+        self.resized = False;
 
 
 
@@ -687,75 +686,90 @@ class SandWindow(pyglet.window.Window):
             self.pen = None
 
 
+    def on_resize(self, screen_width, screen_height):
+        self.screen_width = screen_width
+        self.screen_height = screen_height
+        self.resized = True
+
+
+
 
     def update(self, dt):
         global i
-        global renderToBuffer
-        global inputBuffer
-        global randomFbo
-        global screen_width
-        global screen_height
+
+        if(self.resized):
+            self.renderToBuffer = createFrameBufferObject(self.screen_width, self.screen_height)
+            self.inputBuffer = createFrameBufferObject(self.screen_width, self.screen_height)
+            self.randomFbo = createFrameBufferObject(self.screen_width, self.screen_height)
+            fillFboWithRandomData(self.randomFbo, self.screen_width, self.screen_height)
+            self.fallingSandShader = FallingSandShader()
+            self.sparseShader = SparseShader()
+            self.resized = False
+            glDisable(GL_DEPTH_TEST)
+
+            
+
 
 #    global player
 #    global womanScream
 
-        renderToBuffer, inputBuffer = inputBuffer, renderToBuffer
+        self.renderToBuffer, self.inputBuffer = self.inputBuffer, self.renderToBuffer
 #draw spray paint patter cursor
-        inputBuffer.bind()
-        sparseShader.install()
-        glEnable(inputBuffer.colourBuffer(0).gl_tgt)
-        sparseShader.usetTex("src", 0, randomFbo.colourBuffer(0))
+        self.inputBuffer.bind()
+        self.sparseShader.install()
+        glEnable(self.inputBuffer.colourBuffer(0).gl_tgt)
+        self.sparseShader.usetTex("src", 0, self.randomFbo.colourBuffer(0))
         window.drawPen()
-        sparseShader.uninstall()
-        glDisable(inputBuffer.colourBuffer(0).gl_tgt)
-        inputBuffer.unbind()
+        self.sparseShader.uninstall()
+        glDisable(self.inputBuffer.colourBuffer(0).gl_tgt)
+        self.inputBuffer.unbind()
 
 
         glActiveTexture(GL_TEXTURE0)
 #calculate next screens state
         randomOffset = random.randint(0, 100)
-        renderToBuffer.bind()
-        fallingSandShader.install()
-        glEnable(inputBuffer.colourBuffer(0).gl_tgt)
-        fallingSandShader.usetTex("src", 0, inputBuffer.colourBuffer(0))                
-        fallingSandShader.usetTex("rand", 1, randomFbo.colourBuffer(0))
-        fallingSandShader.uset1F("randomOffset", randomOffset)
-        setup2D(screen_width, screen_height)
+        self.renderToBuffer.bind()
+        self.fallingSandShader.install()
+        glEnable(self.inputBuffer.colourBuffer(0).gl_tgt)
+        self.fallingSandShader.usetTex("src", 0, self.inputBuffer.colourBuffer(0))                
+        self.fallingSandShader.usetTex("rand", 1, self.randomFbo.colourBuffer(0))
+        self.fallingSandShader.uset1F("randomOffset", randomOffset)
+        setup2D(self.screen_width, self.screen_height)
         glBegin(GL_QUADS)
         glTexCoord2f(0.0, 0.0); glVertex2f(0.0, 0.0)
-        glTexCoord2f( screen_width, 0.0); glVertex2f( screen_width, 0.0)
-        glTexCoord2f( screen_width,  screen_height); glVertex2f( screen_width,  screen_height)
-        glTexCoord2f(0.0,  screen_height); glVertex2f(0.0,  screen_height)
+        glTexCoord2f( self.screen_width, 0.0); glVertex2f( self.screen_width, 0.0)
+        glTexCoord2f( self.screen_width,  self.screen_height); glVertex2f( self.screen_width,  self.screen_height)
+        glTexCoord2f(0.0,  self.screen_height); glVertex2f(0.0,  self.screen_height)
         glEnd()
-        glDisable(inputBuffer.colourBuffer(0).gl_tgt)
-        glDisable(randomFbo.colourBuffer(0).gl_tgt)
-        fallingSandShader.uninstall()
-        renderToBuffer.unbind()
+        glDisable(self.inputBuffer.colourBuffer(0).gl_tgt)
+        glDisable(self.randomFbo.colourBuffer(0).gl_tgt)
+        self.fallingSandShader.uninstall()
+        self.renderToBuffer.unbind()
         glActiveTexture(GL_TEXTURE0)
 
 
 #display current state to screen
 
 
-        glBindTexture(renderToBuffer.colourBuffer(0).gl_tgt, renderToBuffer.colourBuffer(0).gl_id)
-        setup2D(screen_width, screen_height)
+        glBindTexture(self.renderToBuffer.colourBuffer(0).gl_tgt, self.renderToBuffer.colourBuffer(0).gl_id)
+        setup2D(self.screen_width, self.screen_height)
         glColor4f(*(1, 1, 1, 1))
         glBegin(GL_QUADS)
         glTexCoord2f(0.0, 0.0); glVertex2f(0.0, 0.0)
-        glTexCoord2f( screen_width, 0.0); glVertex2f( screen_width, 0.0)
-        glTexCoord2f( screen_width,  screen_height); glVertex2f( screen_width,  screen_height)
-        glTexCoord2f(0.0,  screen_height); glVertex2f(0.0,  screen_height)
+        glTexCoord2f( self.screen_width, 0.0); glVertex2f( self.screen_width, 0.0)
+        glTexCoord2f( self.screen_width,  self.screen_height); glVertex2f( self.screen_width,  self.screen_height)
+        glTexCoord2f(0.0,  self.screen_height); glVertex2f(0.0,  self.screen_height)
         glEnd()
 
 
-        glBindTexture(renderToBuffer.colourBuffer(0).gl_tgt, 0)
-        glBindTexture(inputBuffer.colourBuffer(0).gl_tgt, 0)
-        glDisable(inputBuffer.colourBuffer(0).gl_tgt)
-        glDisable(randomFbo.colourBuffer(0).gl_tgt)        
+        glBindTexture(self.renderToBuffer.colourBuffer(0).gl_tgt, 0)
+        glBindTexture(self.inputBuffer.colourBuffer(0).gl_tgt, 0)
+        glDisable(self.inputBuffer.colourBuffer(0).gl_tgt)
+        glDisable(self.randomFbo.colourBuffer(0).gl_tgt)        
         glActiveTexture(GL_TEXTURE0)
 
         pyglui.draw_gui()
-        window.label.draw()
+
         i += 1
             
 
@@ -872,18 +886,7 @@ card = pyglui.Card([
     ])
 pyglui.init(window, card)
 
-
-
-renderToBuffer = createFrameBufferObject(screen_width, screen_height)
-inputBuffer = createFrameBufferObject(screen_width, screen_height)
-
-randomFbo = createFrameBufferObject(screen_width, screen_height)
-fillFboWithRandomData(randomFbo, screen_width, screen_height)
-
-fallingSandShader = FallingSandShader()
-sparseShader = SparseShader()
-
-glDisable(GL_DEPTH_TEST)
+window.on_resize(251, 251)
 
 #player.play()
 
