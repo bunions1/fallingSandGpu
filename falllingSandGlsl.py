@@ -634,7 +634,10 @@ class SandWindow(pyglet.window.Window):
 
     def __init__(self, width, height):
         super(SandWindow, self).__init__(width, height, resizable=True)
-        self.resized = False;
+        self.screen_width = width
+        self.screen_height = height
+        self.initFrameBuffers(0.0)
+        
 
 
 
@@ -673,7 +676,6 @@ class SandWindow(pyglet.window.Window):
             self.color = (0.5, 0.25, 0.25, 1.0)
             
             
-
             
     def drawPen(self):
         if self.pen is None:
@@ -687,28 +689,27 @@ class SandWindow(pyglet.window.Window):
 
 
     def on_resize(self, screen_width, screen_height):
+        print("res", screen_width, screen_height)
         self.screen_width = screen_width
         self.screen_height = screen_height
-        self.resized = True
+        pyglet.clock.unschedule(window.initFrameBuffers)
+        pyglet.clock.schedule_once(window.initFrameBuffers, 1.0)
+        
 
+    def initFrameBuffers(self, dt):
+        self.renderToBuffer = createFrameBufferObject(self.screen_width, self.screen_height)
+        self.inputBuffer = createFrameBufferObject(self.screen_width, self.screen_height)
+        self.randomFbo = createFrameBufferObject(self.screen_width, self.screen_height)
+        fillFboWithRandomData(self.randomFbo, self.screen_width, self.screen_height)
+        self.fallingSandShader = FallingSandShader()
+        self.sparseShader = SparseShader()
+        glDisable(GL_DEPTH_TEST)        
 
 
 
     def update(self, dt):
+        print("up")
         global i
-
-        if(self.resized):
-            self.renderToBuffer = createFrameBufferObject(self.screen_width, self.screen_height)
-            self.inputBuffer = createFrameBufferObject(self.screen_width, self.screen_height)
-            self.randomFbo = createFrameBufferObject(self.screen_width, self.screen_height)
-            fillFboWithRandomData(self.randomFbo, self.screen_width, self.screen_height)
-            self.fallingSandShader = FallingSandShader()
-            self.sparseShader = SparseShader()
-            self.resized = False
-            glDisable(GL_DEPTH_TEST)
-
-            
-
 
 #    global player
 #    global womanScream
@@ -795,7 +796,7 @@ def fillFboWithRandomData(randomFbo, screen_width, screen_height):
     randomImage = pyglet.image.SolidColorImagePattern(color=(0,0,50,255)).create_image(screen_width,screen_height)
     data = randomImage.get_data('RGB', randomImage.pitch)
 
-    newData = (''.join(["%c%c%c%c" % ((random.randint(0, 255),)*4) for i in xrange((len(data)/4)/4)])*4)
+    newData = (''.join(["%c%c%c%c" % ((random.randint(0, 255),)*4) for i in xrange((len(data)/4)/4)] ) *4)
 
     randomImage.set_data('RGB', randomImage.pitch, newData)
     texture = randomImage.get_texture(True)
@@ -886,7 +887,7 @@ card = pyglui.Card([
     ])
 pyglui.init(window, card)
 
-window.on_resize(251, 251)
+
 
 #player.play()
 
