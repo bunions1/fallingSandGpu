@@ -637,6 +637,7 @@ class SandWindow(pyglet.window.Window):
         self.screen_width = width
         self.screen_height = height
         self.initFrameBuffers(0.0)
+
         
 
 
@@ -697,7 +698,10 @@ class SandWindow(pyglet.window.Window):
         
 
     def initFrameBuffers(self, dt):
+
         self.renderToBuffer = createFrameBufferObject(self.screen_width, self.screen_height)
+        if(dt != 0.0):
+            fillFboWithOldFboData(self.renderToBuffer, self.inputBuffer, self.screen_height, self.screen_height)
         self.inputBuffer = createFrameBufferObject(self.screen_width, self.screen_height)
         self.randomFbo = createFrameBufferObject(self.screen_width, self.screen_height)
         fillFboWithRandomData(self.randomFbo, self.screen_width, self.screen_height)
@@ -708,7 +712,6 @@ class SandWindow(pyglet.window.Window):
 
 
     def update(self, dt):
-        print("up")
         global i
 
 #    global player
@@ -790,6 +793,23 @@ def createFrameBufferObject(screen_width, screen_height):
     buf.attach()
     buf.unbind()
     return buf
+
+
+
+def fillFboWithOldFboData(newFbo, oldFbo, screen_width, screen_height):
+    newFbo.bind()
+    glEnable(GL_FRAMEBUFFER_EXT)
+    glBindTexture(GL_FRAMEBUFFER_EXT, oldFbo.frame_buffer)
+    setup2D(screen_width, screen_height)
+    glBegin(GL_QUADS)
+    glTexCoord2f(0.0, 0.0); glVertex2f(0.0, 0.0)
+    glTexCoord2f( screen_width, 0.0); glVertex2f( screen_width, 0.0)
+    glTexCoord2f( screen_width,  screen_height); glVertex2f( screen_width,  screen_height)
+    glTexCoord2f(0.0,  screen_height); glVertex2f(0.0,  screen_height)
+    glEnd()
+    glDisable(GL_FRAMEBUFFER_EXT)
+    newFbo.unbind()
+    
 
 
 def fillFboWithRandomData(randomFbo, screen_width, screen_height):
